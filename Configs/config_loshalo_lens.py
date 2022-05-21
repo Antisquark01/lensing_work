@@ -1,0 +1,112 @@
+# Includes a PEMD deflector with external shear, and Sersic sources. Includes 
+# a simple observational effect model that roughly matches HST effects for
+# Wide Field Camera 3 (WFC3) IR channel with the F160W filter.
+
+import numpy as np
+import pandas as pd
+from scipy.stats import norm, truncnorm, uniform
+from paltas.MainDeflector.simple_deflectors import PEMDShear
+from paltas.Sources.sersic import SingleSersicSource
+from paltas.Substructure.los_dg19_single import LOSDG19
+from paltas.Substructure.subhalos_dg19_single import SubhalosDG19
+from paltas.Sources.cosmos import COSMOSExcludeCatalog
+
+
+# Define the numerics kwargs.
+kwargs_numerics = {'supersampling_factor':1}
+
+# This is always the number of pixels for the CCD. If drizzle is used, the
+# final image will be larger.
+numpix = 128
+
+# Define some general image kwargs for the dataset
+mask_radius = 0.0
+mag_cut = None
+
+# Define arguments that will be used multiple times
+output_ab_zeropoint = 25.127
+cosmos_folder ='../datasets/cosmos/COSMOS_23.5_training_sample/'
+
+
+config_dict = {
+	'los':{
+		'class': LOSDG19,
+		'parameters':{
+			# 'delta_los':norm(loc=49572*4/np.pi,scale=0.0).rvs,
+			'delta_los':norm(loc=11*11*60*60*4/np.pi/1,scale=0.0).rvs,
+			'm_min':1e11,'m_max':5e13,'z_min':0.01,
+			'dz':0.01,'cone_angle':1.0,'r_min':1.0,'r_max':10.0,
+			'c_0':uniform(loc=17,scale=0).rvs,
+			'conc_zeta':uniform(loc=-0.25,scale=0.0).rvs,
+			'conc_beta':uniform(loc=0.7,scale=0.0).rvs,
+			'conc_m_ref': 1e8,
+			'dex_scatter': uniform(loc=0.13,scale=0.00).rvs,
+			'alpha_dz_factor':5.0
+		}
+	},
+	'main_deflector':{
+		'class': PEMDShear,
+		'parameters':{
+			'M200': 1e13,
+			'z_lens': 2.5,
+			'gamma': truncnorm(-20,np.inf,loc=2.0,scale=0.1).rvs,
+			'theta_E': truncnorm(-1.1/0.15,np.inf,loc=1.1,scale=0.).rvs,
+			'e1': norm(loc=0.0,scale=0.1).rvs,
+			'e2': norm(loc=0.0,scale=0.1).rvs,
+			'center_x': norm(loc=0.0,scale=0.16).rvs,
+			'center_y': norm(loc=0.0,scale=0.16).rvs,
+			'gamma1': norm(loc=0.0,scale=0.05).rvs,
+			'gamma2': norm(loc=0.0,scale=0.05).rvs,
+			'ra_0':0.0, 'dec_0':0.0
+		}
+	},
+	# 'source':{
+	# 	'class': SingleSersicSource,
+	# 	'parameters':{
+	# 		'z_source':(lambda: truncnorm(-5,np.inf,loc=3.,scale=0.0).rvs()),
+	# 		'magnitude':uniform(loc=20,scale=0).rvs,
+	# 		'output_ab_zeropoint':output_ab_zeropoint,
+	# 		'R_sersic':truncnorm(-2,2,loc=0.35,scale=0.0).rvs,
+	# 		'n_sersic':truncnorm(-6.,np.inf,loc=3.,scale=0.).rvs,
+	# 		'e1':norm(loc=0.0,scale=0.).rvs,
+	# 		'e2':norm(loc=0.0,scale=0.).rvs,
+	# 		'center_x':norm(loc=0.0,scale=0.0).rvs,
+	# 		'center_y':norm(loc=0.0,scale=0.0).rvs}
+	# },
+	'source':{
+		'class': COSMOSExcludeCatalog,
+		'parameters':{
+			'z_source':6.0,'cosmos_folder':cosmos_folder,
+			'max_z':3.0,'minimum_size_in_pixels':64,'faintest_apparent_mag':20,
+			'smoothing_sigma':0.00,'random_rotation':False,
+			'output_ab_zeropoint':output_ab_zeropoint,
+			'center_x':norm(loc=0.0,scale=0.0).rvs,
+			'center_y':norm(loc=0.0,scale=0.0).rvs,
+			'min_flux_radius':10.0,'source_exclusion_list':np.append(
+				pd.read_csv(
+					'Sources/bad_galaxies.csv',
+					names=['catalog_i'])['catalog_i'].to_numpy(),
+				pd.read_csv(
+					'Sources/val_galaxies.csv',
+					names=['catalog_i'])['catalog_i'].to_numpy())}
+	},
+	'cosmology':{
+		'parameters':{
+			'cosmology_name': 'planck18'
+		}
+	},
+	'psf':{
+		'parameters':{
+			'psf_type':'GAUSSIAN',
+			'fwhm': 0.03
+		}
+	},
+	'detector':{
+		'parameters':{
+			'pixel_scale':0.040,'ccd_gain':1.58,'read_noise':3.0,
+			'magnitude_zero_point':output_ab_zeropoint,
+			'exposure_time':1380,'sky_brightness':21.83,
+			'num_exposures':4,'background_noise':None
+		}
+	}
+}

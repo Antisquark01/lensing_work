@@ -1,0 +1,10 @@
+parameter,mean,std
+main_deflector_parameters_theta_E,1.092653268,0.146419899
+main_deflector_parameters_gamma1,0.001047386,0.046902177
+main_deflector_parameters_gamma2,-0.003518827,0.04977122
+main_deflector_parameters_gamma,2.002577542,0.100492633
+main_deflector_parameters_e1,-0.005555741,0.100150232
+main_deflector_parameters_e2,-0.003513975,0.094430937
+main_deflector_parameters_center_x,-0.001012106,0.163040841
+main_deflector_parameters_center_y,0.00303382,0.15917629
+subhalo_parameters_sigma_sub,0.002043489,0.001045473
